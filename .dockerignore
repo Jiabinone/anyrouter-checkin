@@ -1,0 +1,9 @@
+**/.git
+**/node_modules
+**/dist
+**/tmp
+**/bin
+**/data
+**/.idea
+**/.vscode
+**/.DS_Store

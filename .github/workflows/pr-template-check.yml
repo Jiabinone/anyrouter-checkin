@@ -1,0 +1,91 @@
+name: PR Template Check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core');
+            const body = context.payload.pull_request?.body || '';
+            const errors = [];
+            const required = [
+              '变更说明',
+              '变更内容',
+              '影响范围',
+              '测试情况',
+              '关联 Issue',
+              '截图/录屏',
+            ];
+
+            if (!body.trim()) {
+              core.setFailed('PR 描述为空，请使用默认模板填写。');
+              return;
+            }
+
+            const missing = required.filter((text) => !body.includes(text));
+            if (missing.length > 0) {
+              errors.push(`缺少模板字段: ${missing.join('、')}`);
+            }
+
+            const escapeRegExp = (value) =>
+              value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const getSection = (title) => {
+              const pattern = new RegExp(
+                `##\\s+${escapeRegExp(title)}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`,
+                'm',
+              );
+              const match = body.match(pattern);
+              return match ? match[1].trim() : '';
+            };
+
+            const testSection = getSection('测试情况');
+            const hasChecked = /-\\s*\\[[xX]\\]/.test(testSection);
+            if (!hasChecked) {
+              errors.push('测试情况至少勾选一项。');
+            }
+
+            const issueSection = getSection('关联 Issue');
+            const hasIssue = issueSection.split(/\r?\n/).some((line) => {
+              const trimmed = line.trim();
+              if (!trimmed) {
+                return false;
+              }
+              if (/^-\\s*$/.test(trimmed)) {
+                return false;
+              }
+              if (trimmed.startsWith('-')) {
+                const content = trimmed.replace(/^-\\s*/, '').trim();
+                return content.length > 0;
+              }
+              return true;
+            });
+            if (!hasIssue) {
+              errors.push('关联 Issue 必填（至少提供一个 issue/链接/说明）。');
+            }
+
+            const placeholderLines = body
+              .split(/\r?\n/)
+              .filter((line) => /^-\\s*$/.test(line.trim()));
+            if (placeholderLines.length > 0) {
+              errors.push('存在未填写的占位符 \"- \"，请补充完整内容。');
+            }
+
+            if (errors.length > 0) {
+              core.setFailed(errors.join(' '));
+            }

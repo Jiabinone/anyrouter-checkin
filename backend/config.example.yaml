@@ -1,0 +1,17 @@
+server:
+  port: 8080
+  mode: debug
+
+database:
+  path: ./data/app.db
+
+jwt:
+  secret: <32字节Base64>
+  expire: 24h
+
+aes:
+  key: <32字符十六进制>
+
+admin:
+  username: admin
+  password: admin123

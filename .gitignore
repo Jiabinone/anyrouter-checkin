@@ -1,0 +1,43 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Node
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+/frontend/.eslintcache
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Go
+/backend/bin/
+/backend/tmp/
+/backend/data/
+/backend/config.yaml
+*.out
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Env
+.env
+.env.*
+
+# Local-only scripts
+/scripts/docker_publish.sh
+/scripts/cleanup_actions_runs.sh

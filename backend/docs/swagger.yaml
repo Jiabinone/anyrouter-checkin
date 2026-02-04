@@ -1,0 +1,598 @@
+basePath: /api
+definitions:
+  anyrouter-checkin_internal_model.Account:
+    properties:
+      created_at:
+        $ref: '#/definitions/carbon.DateTime'
+      id:
+        type: integer
+      last_checkin:
+        $ref: '#/definitions/carbon.DateTime'
+      last_result:
+        type: string
+      name:
+        type: string
+      role:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        $ref: '#/definitions/carbon.DateTime'
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  anyrouter-checkin_internal_model.CheckinLog:
+    properties:
+      account_id:
+        type: integer
+      created_at:
+        $ref: '#/definitions/carbon.DateTime'
+      id:
+        type: integer
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  anyrouter-checkin_internal_model.CronTask:
+    properties:
+      account_ids:
+        type: string
+      created_at:
+        $ref: '#/definitions/carbon.DateTime'
+      cron_expr:
+        type: string
+      id:
+        type: integer
+      last_run:
+        $ref: '#/definitions/carbon.DateTime'
+      name:
+        type: string
+      next_run:
+        $ref: '#/definitions/carbon.DateTime'
+      status:
+        type: integer
+      task_type:
+        type: string
+    type: object
+  anyrouter-checkin_internal_service.CheckinLogSummary:
+    properties:
+      logs:
+        items:
+          $ref: '#/definitions/anyrouter-checkin_internal_model.CheckinLog'
+        type: array
+      today_checkin_account_count:
+        type: integer
+    type: object
+  anyrouter-checkin_internal_service.SessionInfo:
+    properties:
+      group:
+        type: string
+      role:
+        type: integer
+      status:
+        type: integer
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  anyrouter-checkin_pkg_response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+  carbon.DateTime:
+    properties:
+      error: {}
+    type: object
+  internal_handler.AccountRequest:
+    properties:
+      name:
+        example: 我的账号
+        type: string
+      session:
+        example: base64-session-cookie
+        type: string
+    required:
+    - name
+    - session
+    type: object
+  internal_handler.ChangePasswordRequest:
+    properties:
+      new_password:
+        example: newpass123
+        minLength: 6
+        type: string
+      old_password:
+        example: oldpass
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  internal_handler.CronRequest:
+    properties:
+      account_ids:
+        example: '[1,2]'
+        type: string
+      cron_expr:
+        example: 0 8 * * *
+        type: string
+      name:
+        example: 每日签到
+        type: string
+      status:
+        example: 1
+        type: integer
+      task_type:
+        example: checkin
+        type: string
+    required:
+    - cron_expr
+    - name
+    type: object
+  internal_handler.LoginRequest:
+    properties:
+      password:
+        example: admin123
+        type: string
+      username:
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  internal_handler.VerifyRequest:
+    properties:
+      session:
+        example: base64-session-cookie
+        type: string
+    required:
+    - session
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: AnyRouter 签到中台管理系统
+  title: AnyRouter 管理后台 API
+  version: "1.0"
+paths:
+  /accounts:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/anyrouter-checkin_internal_model.Account'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取所有账号
+      tags:
+      - 账号管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 账号参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.AccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anyrouter-checkin_internal_model.Account'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 添加 AnyRouter 账号
+      tags:
+      - 账号管理
+  /accounts/{id}:
+    delete:
+      parameters:
+      - description: 账号ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除账号
+      tags:
+      - 账号管理
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 账号ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 账号参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.AccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anyrouter-checkin_internal_model.Account'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新账号信息
+      tags:
+      - 账号管理
+  /accounts/{id}/checkin:
+    post:
+      parameters:
+      - description: 账号ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 手动执行签到
+      tags:
+      - 账号管理
+  /accounts/verify:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Session
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anyrouter-checkin_internal_service.SessionInfo'
+              type: object
+      summary: 验证 AnyRouter Session 有效性
+      tags:
+      - 账号管理
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 登录参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: 用户登录
+      tags:
+      - 认证
+  /auth/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 密码参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 修改当前用户密码
+      tags:
+      - 认证
+  /auth/profile:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证
+  /config/{category}:
+    get:
+      parameters:
+      - description: 配置分类
+        enum:
+        - telegram
+        - system
+        in: path
+        name: category
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取指定分类的配置
+      tags:
+      - 系统配置
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 配置分类
+        enum:
+        - telegram
+        - system
+        in: path
+        name: category
+        required: true
+        type: string
+      - description: 配置键值对
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新指定分类的配置
+      tags:
+      - 系统配置
+  /config/telegram/test:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 发送 Telegram 测试消息
+      tags:
+      - 系统配置
+  /cron:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/anyrouter-checkin_internal_model.CronTask'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取所有定时任务
+      tags:
+      - 定时任务
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 任务参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.CronRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anyrouter-checkin_internal_model.CronTask'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建定时任务
+      tags:
+      - 定时任务
+  /cron/{id}:
+    delete:
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除定时任务
+      tags:
+      - 定时任务
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 任务参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.CronRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anyrouter-checkin_internal_model.CronTask'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新定时任务
+      tags:
+      - 定时任务
+  /cron/{id}/trigger:
+    post:
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 立即触发执行定时任务
+      tags:
+      - 定时任务
+  /logs:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/anyrouter-checkin_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anyrouter-checkin_internal_service.CheckinLogSummary'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取签到日志列表与今日账号统计
+      tags:
+      - 日志
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

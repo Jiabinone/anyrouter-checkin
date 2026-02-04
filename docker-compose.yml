@@ -1,0 +1,14 @@
+services:
+  anyrouter:
+    image: fjiabinc/anyrouter-checkin:latest
+    container_name: anyrouter-checkin
+    restart: unless-stopped
+    pull_policy: always
+    ports:
+      - "5173:80"
+      - "8080:8080"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/config.yaml:/app/config.yaml:ro
