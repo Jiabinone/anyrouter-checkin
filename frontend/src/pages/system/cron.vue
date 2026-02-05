@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { Plus, Trash2, Play, Pause, PlayCircle } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { getCronTasks, createCronTask, updateCronTask, deleteCronTask, triggerCronTask, type CronTask } from '@/api/cron'
 import { getAccounts, type Account } from '@/api/account'
-import { Plus, Trash2, Play, Pause, PlayCircle } from 'lucide-vue-next'
 import { formatTime } from '@/utils/time'
-import { toast } from 'vue-sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
@@ -101,6 +101,10 @@ function parseAccountIds(value: string) {
   }
 }
 
+function getAccountCount(value: string) {
+  return parseAccountIds(value).length
+}
+
 function setAccountChecked(id: number, checked: boolean | 'indeterminate') {
   const idx = form.value.account_ids.indexOf(id)
   if (checked === true) {
@@ -148,7 +152,7 @@ onMounted(loadData)
             <TableCell class="font-mono text-sm">
               {{ task.cron_expr }}
             </TableCell>
-            <TableCell>{{ JSON.parse(task.account_ids || '[]').length }}</TableCell>
+            <TableCell>{{ getAccountCount(task.account_ids) }}</TableCell>
             <TableCell>
               <Badge
                 v-if="task.status === 1"

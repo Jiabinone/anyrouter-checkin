@@ -35,7 +35,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
@@ -43,7 +43,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/anyrouter-checkin_internal_model.Account"
+                                                "$ref": "#/definitions/model.Account"
                                             }
                                         }
                                     }
@@ -76,7 +76,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.AccountRequest"
+                            "$ref": "#/definitions/handler.AccountRequest"
                         }
                     }
                 ],
@@ -86,13 +86,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anyrouter-checkin_internal_model.Account"
+                                            "$ref": "#/definitions/model.Account"
                                         }
                                     }
                                 }
@@ -121,7 +121,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.VerifyRequest"
+                            "$ref": "#/definitions/handler.VerifyRequest"
                         }
                     }
                 ],
@@ -131,13 +131,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anyrouter-checkin_internal_service.SessionInfo"
+                                            "$ref": "#/definitions/service.SessionInfo"
                                         }
                                     }
                                 }
@@ -178,7 +178,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.AccountRequest"
+                            "$ref": "#/definitions/handler.AccountRequest"
                         }
                     }
                 ],
@@ -188,13 +188,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anyrouter-checkin_internal_model.Account"
+                                            "$ref": "#/definitions/model.Account"
                                         }
                                     }
                                 }
@@ -229,7 +229,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -262,7 +262,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -287,7 +287,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.LoginRequest"
+                            "$ref": "#/definitions/handler.LoginRequest"
                         }
                     }
                 ],
@@ -297,7 +297,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
@@ -340,7 +340,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ChangePasswordRequest"
+                            "$ref": "#/definitions/handler.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -348,7 +348,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -372,7 +372,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -391,12 +391,12 @@ const docTemplate = `{
                 "tags": [
                     "系统配置"
                 ],
-                "summary": "发送 Telegram 测试消息",
+                "summary": "发送 Telegram 测试消息（使用最近成功签到记录）",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -435,7 +435,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
@@ -498,7 +498,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -524,7 +524,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
@@ -532,7 +532,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/anyrouter-checkin_internal_model.CronTask"
+                                                "$ref": "#/definitions/model.CronTask"
                                             }
                                         }
                                     }
@@ -565,7 +565,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.CronRequest"
+                            "$ref": "#/definitions/handler.CronRequest"
                         }
                     }
                 ],
@@ -575,13 +575,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anyrouter-checkin_internal_model.CronTask"
+                                            "$ref": "#/definitions/model.CronTask"
                                         }
                                     }
                                 }
@@ -622,7 +622,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.CronRequest"
+                            "$ref": "#/definitions/handler.CronRequest"
                         }
                     }
                 ],
@@ -632,13 +632,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anyrouter-checkin_internal_model.CronTask"
+                                            "$ref": "#/definitions/model.CronTask"
                                         }
                                     }
                                 }
@@ -673,7 +673,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -706,7 +706,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -732,13 +732,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/anyrouter-checkin_pkg_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anyrouter-checkin_internal_service.CheckinLogSummary"
+                                            "$ref": "#/definitions/service.CheckinLogSummary"
                                         }
                                     }
                                 }
@@ -750,146 +750,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "anyrouter-checkin_internal_model.Account": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "last_checkin": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "last_result": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "anyrouter-checkin_internal_model.CheckinLog": {
-            "type": "object",
-            "properties": {
-                "account_id": {
-                    "type": "integer"
-                },
-                "created_at": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "anyrouter-checkin_internal_model.CronTask": {
-            "type": "object",
-            "properties": {
-                "account_ids": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "cron_expr": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "last_run": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "next_run": {
-                    "$ref": "#/definitions/carbon.DateTime"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "task_type": {
-                    "type": "string"
-                }
-            }
-        },
-        "anyrouter-checkin_internal_service.CheckinLogSummary": {
-            "type": "object",
-            "properties": {
-                "logs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/anyrouter-checkin_internal_model.CheckinLog"
-                    }
-                },
-                "today_checkin_account_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "anyrouter-checkin_internal_service.SessionInfo": {
-            "type": "object",
-            "properties": {
-                "group": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "anyrouter-checkin_pkg_response.Response": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "carbon.DateTime": {
-            "type": "object",
-            "properties": {
-                "error": {}
-            }
-        },
-        "internal_handler.AccountRequest": {
+        "handler.AccountRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -906,7 +767,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.ChangePasswordRequest": {
+        "handler.ChangePasswordRequest": {
             "type": "object",
             "required": [
                 "new_password",
@@ -924,7 +785,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.CronRequest": {
+        "handler.CronRequest": {
             "type": "object",
             "required": [
                 "cron_expr",
@@ -953,7 +814,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.LoginRequest": {
+        "handler.LoginRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -970,7 +831,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.VerifyRequest": {
+        "handler.VerifyRequest": {
             "type": "object",
             "required": [
                 "session"
@@ -979,6 +840,146 @@ const docTemplate = `{
                 "session": {
                     "type": "string",
                     "example": "base64-session-cookie"
+                }
+            }
+        },
+        "model.Account": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_checkin": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "last_result": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CheckinLog": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.CronTask": {
+            "type": "object",
+            "properties": {
+                "account_ids": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "cron_expr": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_run": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "next_run": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "task_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CheckinLogSummary": {
+            "type": "object",
+            "properties": {
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CheckinLog"
+                    }
+                },
+                "today_checkin_account_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "service.SessionInfo": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         }

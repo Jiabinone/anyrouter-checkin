@@ -45,16 +45,20 @@ func InitDefaultConfigs() {
 	}
 
 	defaults := []model.Config{
+		{Key: "telegram.api_base", Value: "https://api.telegram.org", Category: "telegram"},
 		{Key: "telegram.bot_token", Value: "", Category: "telegram"},
 		{Key: "telegram.chat_id", Value: "", Category: "telegram"},
 		{Key: "telegram.enabled", Value: "false", Category: "telegram"},
+		{Key: "telegram.proxy_url", Value: "", Category: "telegram"},
 		{Key: "telegram.template", Value: defaultTelegramTemplate, Category: "telegram"},
 	}
 	for _, c := range defaults {
 		var cfg model.Config
 		if err := DB.Where("`key` = ?", c.Key).First(&cfg).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				DB.Create(&c)
+				if err := DB.Create(&c).Error; err != nil {
+					continue
+				}
 			}
 			continue
 		}
@@ -62,7 +66,9 @@ func InitDefaultConfigs() {
 		if c.Key == "telegram.template" {
 			if _, ok := legacyTelegramTemplates[cfg.Value]; ok {
 				cfg.Value = c.Value
-				DB.Save(&cfg)
+				if err := DB.Save(&cfg).Error; err != nil {
+					continue
+				}
 			}
 		}
 	}

@@ -21,10 +21,14 @@ func InitCron() {
 	scheduler = cron.New()
 	scheduler.Start()
 
-	var tasks []model.CronTask
-	repository.DB.Where("status = ?", 1).Find(&tasks)
+	tasks, err := repository.ListEnabledCronTasks()
+	if err != nil {
+		return
+	}
 	for _, task := range tasks {
-		RegisterTask(task)
+		if err := RegisterTask(task); err != nil {
+			continue
+		}
 	}
 }
 
@@ -59,31 +63,36 @@ func UnregisterTask(taskID uint) {
 }
 
 func ExecuteTask(taskID uint) {
-	var task model.CronTask
-	if err := repository.DB.First(&task, taskID).Error; err != nil {
+	task, err := repository.GetCronTaskByID(taskID)
+	if err != nil {
 		return
 	}
 
 	var accountIDs []uint
-	json.Unmarshal([]byte(task.AccountIDs), &accountIDs)
+	if err := json.Unmarshal([]byte(task.AccountIDs), &accountIDs); err != nil {
+		return
+	}
 
 	for _, accID := range accountIDs {
-		var account model.Account
-		if repository.DB.First(&account, accID).Error == nil {
-			success, result := CheckinAccount(accID)
-			SendCheckinNotification(account.Name, success, result)
+		account, err := repository.GetAccountByID(accID)
+		if err != nil {
+			continue
 		}
+		success, result := CheckinAccount(accID)
+		SendCheckinNotification(account.Name, success, result)
 	}
 
 	now := carbon.DateTime{Carbon: carbon.Now()}
 	task.LastRun = &now
-	repository.DB.Save(&task)
+	if err := repository.SaveCronTask(task); err != nil {
+		return
+	}
 	updateNextRun(taskID)
 }
 
 func updateNextRun(taskID uint) {
-	var task model.CronTask
-	if repository.DB.First(&task, taskID).Error != nil {
+	task, err := repository.GetCronTaskByID(taskID)
+	if err != nil {
 		return
 	}
 
@@ -96,5 +105,37 @@ func updateNextRun(taskID uint) {
 	nextTime := schedule.Next(carbon.Now().StdTime())
 	next := carbon.DateTime{Carbon: carbon.CreateFromStdTime(nextTime)}
 	task.NextRun = &next
-	repository.DB.Save(&task)
+	if err := repository.SaveCronTask(task); err != nil {
+		return
+	}
+}
+
+func listCronTasks() ([]model.CronTask, error) {
+	return repository.ListCronTasks()
+}
+
+func createCronTask(task *model.CronTask) (model.CronTask, error) {
+	if err := repository.CreateCronTask(task); err != nil {
+		return model.CronTask{}, err
+	}
+	return *task, nil
+}
+
+func updateCronTask(id uint, req model.CronTask) (model.CronTask, error) {
+	task, err := repository.GetCronTaskByID(id)
+	if err != nil {
+		return model.CronTask{}, err
+	}
+	task.Name = req.Name
+	task.CronExpr = req.CronExpr
+	task.AccountIDs = req.AccountIDs
+	task.Status = req.Status
+	if err := repository.SaveCronTask(task); err != nil {
+		return model.CronTask{}, err
+	}
+	return *task, nil
+}
+
+func deleteCronTask(id uint) error {
+	return repository.DeleteCronTask(id)
 }

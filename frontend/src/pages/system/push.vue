@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { getConfigs, updateConfigs, testTelegram } from '@/api/system'
 import { Save, Send } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { getConfigs, updateConfigs, testTelegram } from '@/api/system'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,8 +28,10 @@ const legacyTemplates = new Set([
 
 const form = ref({
   'telegram.enabled': 'false',
+  'telegram.api_base': 'https://api.telegram.org',
   'telegram.bot_token': '',
   'telegram.chat_id': '',
+  'telegram.proxy_url': '',
   'telegram.template': recommendedTemplate,
 })
 
@@ -58,6 +60,9 @@ async function handleSave() {
   try {
     await updateConfigs('telegram', form.value)
     toast.success('保存成功')
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '保存失败'
+    toast.error('保存失败: ' + message)
   } finally {
     loading.value = false
   }
@@ -99,6 +104,30 @@ onMounted(loadConfigs)
               </p>
             </div>
             <Switch v-model="telegramEnabled" />
+          </div>
+
+          <div class="space-y-2">
+            <Label>API 地址 / 反代地址</Label>
+            <Input
+              v-model="form['telegram.api_base']"
+              class="font-mono text-sm"
+              placeholder="https://api.telegram.org"
+            />
+            <p class="text-xs text-muted-foreground">
+              国内无法直连可填写反代地址
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <Label>代理地址</Label>
+            <Input
+              v-model="form['telegram.proxy_url']"
+              class="font-mono text-sm"
+              placeholder="http://127.0.0.1:7890"
+            />
+            <p class="text-xs text-muted-foreground">
+              支持 HTTP/HTTPS 代理（可选）
+            </p>
           </div>
 
           <div class="space-y-2">

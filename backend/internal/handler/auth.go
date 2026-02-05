@@ -49,8 +49,16 @@ func Login(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /auth/profile [get]
 func Profile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	username, _ := c.Get("username")
+	userID, ok := c.Get("user_id")
+	if !ok {
+		response.Unauthorized(c)
+		return
+	}
+	username, ok := c.Get("username")
+	if !ok {
+		response.Unauthorized(c)
+		return
+	}
 	response.Success(c, gin.H{
 		"user_id":  userID,
 		"username": username,
@@ -73,8 +81,17 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("user_id")
-	if err := service.ChangePassword(userID.(uint), req.OldPassword, req.NewPassword); err != nil {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		response.Unauthorized(c)
+		return
+	}
+	id, ok := userID.(uint)
+	if !ok {
+		response.Error(c, 400, "用户信息异常")
+		return
+	}
+	if err := service.ChangePassword(id, req.OldPassword, req.NewPassword); err != nil {
 		response.Error(c, 400, err.Error())
 		return
 	}

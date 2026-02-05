@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
 	"anyrouter-checkin/internal/model"
-	"anyrouter-checkin/internal/repository"
 	"anyrouter-checkin/internal/service"
 	"anyrouter-checkin/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type CronRequest struct {
@@ -27,8 +28,11 @@ type CronRequest struct {
 // @Success 200 {object} response.Response{data=[]model.CronTask}
 // @Router /cron [get]
 func ListCronTasks(c *gin.Context) {
-	var tasks []model.CronTask
-	repository.DB.Order("id desc").Find(&tasks)
+	tasks, err := service.ListCronTasks()
+	if err != nil {
+		response.Error(c, 500, "获取任务失败")
+		return
+	}
 	response.Success(c, tasks)
 }
 
@@ -56,13 +60,13 @@ func CreateCronTask(c *gin.Context) {
 		Status:     1,
 	}
 
-	if err := repository.DB.Create(&task).Error; err != nil {
+	created, err := service.CreateCronTask(task)
+	if err != nil {
 		response.Error(c, 500, "创建失败")
 		return
 	}
 
-	service.RegisterTask(task)
-	response.Success(c, task)
+	response.Success(c, created)
 }
 
 // UpdateCronTask 更新定时任务
@@ -76,10 +80,9 @@ func CreateCronTask(c *gin.Context) {
 // @Success 200 {object} response.Response{data=model.CronTask}
 // @Router /cron/{id} [put]
 func UpdateCronTask(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	var task model.CronTask
-	if repository.DB.First(&task, id).Error != nil {
-		response.Error(c, 404, "任务不存在")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, 400, "任务ID无效")
 		return
 	}
 
@@ -89,20 +92,22 @@ func UpdateCronTask(c *gin.Context) {
 		return
 	}
 
-	task.Name = req.Name
-	task.CronExpr = req.CronExpr
-	task.AccountIDs = req.AccountIDs
-	task.Status = req.Status
-
-	repository.DB.Save(&task)
-
-	if task.Status == 1 {
-		service.RegisterTask(task)
-	} else {
-		service.UnregisterTask(task.ID)
+	updated, err := service.UpdateCronTask(uint(id), model.CronTask{
+		Name:       req.Name,
+		CronExpr:   req.CronExpr,
+		TaskType:   "checkin",
+		AccountIDs: req.AccountIDs,
+		Status:     req.Status,
+	})
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Error(c, 404, "任务不存在")
+			return
+		}
+		response.Error(c, 500, "更新失败")
+		return
 	}
-
-	response.Success(c, task)
+	response.Success(c, updated)
 }
 
 // DeleteCronTask 删除定时任务
@@ -114,9 +119,15 @@ func UpdateCronTask(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /cron/{id} [delete]
 func DeleteCronTask(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	service.UnregisterTask(uint(id))
-	repository.DB.Delete(&model.CronTask{}, id)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, 400, "任务ID无效")
+		return
+	}
+	if err := service.DeleteCronTask(uint(id)); err != nil {
+		response.Error(c, 500, "删除失败")
+		return
+	}
 	response.Success(c, nil)
 }
 
@@ -129,7 +140,11 @@ func DeleteCronTask(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /cron/{id}/trigger [post]
 func TriggerCronTask(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, 400, "任务ID无效")
+		return
+	}
 	go service.ExecuteTask(uint(id))
 	response.Success(c, gin.H{"message": "任务已触发"})
 }

@@ -7,32 +7,16 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	neturl "net/url"
+	"strings"
 	"text/template"
 
-	"anyrouter-checkin/internal/model"
 	"anyrouter-checkin/internal/repository"
 
 	"gorm.io/gorm"
 )
 
 var ErrNoSuccessfulCheckinLog = errors.New("暂无成功签到记录")
-
-func GetConfig(key string) string {
-	var cfg model.Config
-	repository.DB.Where("`key` = ?", key).First(&cfg)
-	return cfg.Value
-}
-
-func SetConfig(key, value, category string) error {
-	var cfg model.Config
-	result := repository.DB.Where("`key` = ?", key).First(&cfg)
-	if result.Error != nil {
-		cfg = model.Config{Key: key, Value: value, Category: category}
-		return repository.DB.Create(&cfg).Error
-	}
-	cfg.Value = value
-	return repository.DB.Save(&cfg).Error
-}
 
 func SendTelegramMessage(message string) error {
 	if GetConfig("telegram.enabled") != "true" {
@@ -45,15 +29,35 @@ func SendTelegramMessage(message string) error {
 		return fmt.Errorf("Telegram 配置不完整")
 	}
 
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
+	apiBase := strings.TrimSpace(GetConfig("telegram.api_base"))
+	apiBase = strings.TrimRight(apiBase, "/")
+	if apiBase == "" {
+		apiBase = "https://api.telegram.org"
+	}
+	endpoint := fmt.Sprintf("%s/bot%s/sendMessage", apiBase, botToken)
 	payload := map[string]string{
 		"chat_id":    chatID,
 		"text":       message,
 		"parse_mode": "HTML",
 	}
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	client := &http.Client{}
+	proxyURL := strings.TrimSpace(GetConfig("telegram.proxy_url"))
+	if proxyURL != "" {
+		proxy, err := neturl.Parse(proxyURL)
+		if err != nil {
+			return fmt.Errorf("代理地址无效")
+		}
+		client.Transport = &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+	}
+
+	resp, err := client.Post(endpoint, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
@@ -101,8 +105,8 @@ func SendCheckinNotification(accountName string, success bool, result string) {
 }
 
 func SendTestCheckinNotification() error {
-	var log model.CheckinLog
-	if err := repository.DB.Where("success = ?", true).Order("id desc").First(&log).Error; err != nil {
+	log, err := repository.GetLatestSuccessfulCheckinLog()
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrNoSuccessfulCheckinLog
 		}
@@ -110,8 +114,8 @@ func SendTestCheckinNotification() error {
 	}
 
 	accountName := fmt.Sprintf("账号ID:%d", log.AccountID)
-	var account model.Account
-	if err := repository.DB.First(&account, log.AccountID).Error; err == nil && account.Name != "" {
+	account, err := repository.GetAccountByID(log.AccountID)
+	if err == nil && account.Name != "" {
 		accountName = account.Name
 	}
 

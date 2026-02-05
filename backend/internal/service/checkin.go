@@ -12,10 +12,8 @@ import (
 	"strings"
 	"time" // 仅用于 time.Duration 类型
 
-	"anyrouter-checkin/internal/config"
 	"anyrouter-checkin/internal/model"
 	"anyrouter-checkin/internal/repository"
-	"anyrouter-checkin/pkg/utils"
 
 	"github.com/dromara/carbon/v2"
 )
@@ -110,7 +108,7 @@ func ParseSession(sessionCookie string) (*SessionInfo, error) {
 	return info, nil
 }
 
-func generateAcwScV2(arg1 string) string {
+func generateAcwScV2(arg1 string) (string, error) {
 	m := []int{0xf, 0x23, 0x1d, 0x18, 0x21, 0x10, 0x1, 0x26, 0xa, 0x9,
 		0x13, 0x1f, 0x28, 0x1b, 0x16, 0x17, 0x19, 0xd, 0x6, 0xb,
 		0x27, 0x12, 0x14, 0x8, 0xe, 0x15, 0x20, 0x1a, 0x2, 0x1e,
@@ -133,16 +131,25 @@ func generateAcwScV2(arg1 string) string {
 		minLen = len(p)
 	}
 	for x := 0; x < minLen; x += 2 {
-		a, _ := strconv.ParseInt(u[x:x+2], 16, 64)
-		b, _ := strconv.ParseInt(p[x:x+2], 16, 64)
+		a, err := strconv.ParseInt(u[x:x+2], 16, 64)
+		if err != nil {
+			return "", err
+		}
+		b, err := strconv.ParseInt(p[x:x+2], 16, 64)
+		if err != nil {
+			return "", err
+		}
 		v += fmt.Sprintf("%02x", a^b)
 	}
 
-	return v
+	return v, nil
 }
 
 func Checkin(sessionCookie string) (string, error) {
-	jar, _ := cookiejar.New(nil)
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return "", fmt.Errorf("初始化 Cookie 失败: %v", err)
+	}
 	client := &http.Client{Jar: jar, Timeout: 30 * time.Second}
 
 	baseURL := "https://anyrouter.top"
@@ -155,7 +162,10 @@ func Checkin(sessionCookie string) (string, error) {
 		"user-agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
 	}
 
-	req, _ := http.NewRequest("GET", baseURL+"/", nil)
+	req, err := http.NewRequest("GET", baseURL+"/", nil)
+	if err != nil {
+		return "", fmt.Errorf("创建请求失败: %v", err)
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -163,21 +173,36 @@ func Checkin(sessionCookie string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("请求失败: %v", err)
 	}
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
+	if err != nil {
+		return "", fmt.Errorf("读取响应失败: %v", err)
+	}
 
 	re := regexp.MustCompile(`arg1='([A-F0-9]+)'`)
 	matches := re.FindStringSubmatch(string(body))
 	if len(matches) > 1 {
-		acwScV2 := generateAcwScV2(matches[1])
-		u, _ := url.Parse(baseURL)
+		acwScV2, err := generateAcwScV2(matches[1])
+		if err != nil {
+			return "", fmt.Errorf("生成 Cookie 失败: %v", err)
+		}
+		u, err := url.Parse(baseURL)
+		if err != nil {
+			return "", fmt.Errorf("解析地址失败: %v", err)
+		}
 		jar.SetCookies(u, []*http.Cookie{{Name: "acw_sc__v2", Value: acwScV2}})
 	}
 
-	u, _ := url.Parse(baseURL)
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("解析地址失败: %v", err)
+	}
 	jar.SetCookies(u, []*http.Cookie{{Name: "session", Value: sessionCookie}})
 
-	req, _ = http.NewRequest("POST", baseURL+"/api/user/sign_in", nil)
+	req, err = http.NewRequest("POST", baseURL+"/api/user/sign_in", nil)
+	if err != nil {
+		return "", fmt.Errorf("创建签到请求失败: %v", err)
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -185,24 +210,22 @@ func Checkin(sessionCookie string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("签到请求失败: %v", err)
 	}
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	resp.Body.Close()
+	if err != nil {
+		return "", fmt.Errorf("读取签到响应失败: %v", err)
+	}
 
 	return string(body), nil
 }
 
 func CheckinAccount(accountID uint) (bool, string) {
-	var account model.Account
-	if err := repository.DB.First(&account, accountID).Error; err != nil {
+	account, err := repository.GetAccountByID(accountID)
+	if err != nil {
 		return false, "账号不存在"
 	}
 
-	session, err := utils.AESDecrypt(account.Session, config.C.AES.Key)
-	if err != nil {
-		return false, "Session 解密失败"
-	}
-
-	result, err := Checkin(session)
+	result, err := Checkin(account.Session)
 	if err != nil {
 		return false, err.Error()
 	}
@@ -210,14 +233,20 @@ func CheckinAccount(accountID uint) (bool, string) {
 	now := carbon.DateTime{Carbon: carbon.Now()}
 	account.LastCheckin = &now
 	account.LastResult = result
-	repository.DB.Save(&account)
+	if err := repository.SaveAccount(account); err != nil {
+		return false, "保存签到结果失败: " + err.Error()
+	}
 
 	success := strings.Contains(result, "success") || strings.Contains(result, "已签到")
-	repository.DB.Create(&model.CheckinLog{
+	if err := repository.CreateCheckinLog(&model.CheckinLog{
 		AccountID: accountID,
 		Success:   success,
 		Message:   result,
-	})
+	}); err != nil {
+		return false, "记录签到日志失败: " + err.Error()
+	}
+
+	SendCheckinNotification(account.Name, success, result)
 
 	return success, result
 }

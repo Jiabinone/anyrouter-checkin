@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getAccounts, createAccount, deleteAccount, checkinAccount, verifySession, type Account } from '@/api/account'
 import { Plus, Trash2, Play, RefreshCw } from 'lucide-vue-next'
-import { formatTime } from '@/utils/time'
 import { toast } from 'vue-sonner'
+import { getAccounts, createAccount, updateAccount, deleteAccount, checkinAccount, verifySession, type Account } from '@/api/account'
+import { formatTime } from '@/utils/time'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,38 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const accounts = ref<Account[]>([])
 const showModal = ref(false)
 const loading = ref(false)
+const isEditing = ref(false)
+const editingId = ref<number | null>(null)
 
 const form = ref({ name: '', session: '' })
 const sessionInfo = ref<{ user_id: number; username: string; role: number } | null>(null)
+
+function resetForm() {
+  form.value = { name: '', session: '' }
+  sessionInfo.value = null
+}
+
+function openCreate() {
+  resetForm()
+  isEditing.value = false
+  editingId.value = null
+  showModal.value = true
+}
+
+function openEdit(account: Account) {
+  resetForm()
+  isEditing.value = true
+  editingId.value = account.id
+  form.value.name = account.name
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  resetForm()
+  isEditing.value = false
+  editingId.value = null
+}
 
 async function loadAccounts() {
   accounts.value = await getAccounts()
@@ -39,15 +68,38 @@ async function handleVerify() {
 }
 
 async function handleCreate() {
-  if (!form.value.name || !form.value.session) {
-    toast.error('请填写完整信息')
+  if (!form.value.name) {
+    toast.error('请填写账号名称')
+    return
+  }
+
+  if (isEditing.value) {
+    if (!editingId.value) {
+      toast.error('编辑账号失败：缺少账号ID')
+      return
+    }
+    const payload = {
+      name: form.value.name,
+      session: form.value.session || 'unchanged',
+    }
+    try {
+      await updateAccount(editingId.value, payload)
+      closeModal()
+      toast.success('账号更新成功')
+      await loadAccounts()
+    } catch (e) {
+      toast.error('更新失败: ' + (e as Error).message)
+    }
+    return
+  }
+
+  if (!form.value.session) {
+    toast.error('请填写 Session')
     return
   }
   try {
     await createAccount(form.value)
-    showModal.value = false
-    form.value = { name: '', session: '' }
-    sessionInfo.value = null
+    closeModal()
     toast.success('账号添加成功')
     await loadAccounts()
   } catch (e) {
@@ -85,7 +137,7 @@ onMounted(loadAccounts)
       <h1 class="text-2xl font-bold">
         账号管理
       </h1>
-      <Button @click="showModal = true">
+      <Button @click="openCreate">
         <Plus class="w-4 h-4" />
         添加账号
       </Button>
@@ -107,6 +159,8 @@ onMounted(loadAccounts)
           <TableRow
             v-for="account in accounts"
             :key="account.id"
+            class="cursor-pointer"
+            @click="openEdit(account)"
           >
             <TableCell>{{ account.id }}</TableCell>
             <TableCell>{{ account.name }}</TableCell>
@@ -128,7 +182,7 @@ onMounted(loadAccounts)
             <TableCell class="text-sm">
               {{ formatTime(account.last_checkin) }}
             </TableCell>
-            <TableCell>
+            <TableCell @click.stop>
               <div class="flex gap-2">
                 <Button
                   variant="ghost"
@@ -180,7 +234,7 @@ onMounted(loadAccounts)
     <Dialog v-model:open="showModal">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>添加账号</DialogTitle>
+          <DialogTitle>{{ isEditing ? '编辑账号' : '添加账号' }}</DialogTitle>
         </DialogHeader>
 
         <div class="space-y-4">
@@ -198,9 +252,12 @@ onMounted(loadAccounts)
             <Textarea
               v-model="form.session"
               class="h-24"
-              placeholder="从浏览器复制的 session cookie"
+              :placeholder="isEditing ? '留空表示不修改' : '从浏览器复制的 session cookie'"
               autocomplete="off"
             />
+            <p class="text-xs text-muted-foreground">
+              {{ isEditing ? '出于安全考虑不回显 Session，留空表示不修改' : 'Session 建议先验证后再保存' }}
+            </p>
             <Button
               variant="link"
               size="sm"
@@ -225,12 +282,12 @@ onMounted(loadAccounts)
         <DialogFooter>
           <Button
             variant="outline"
-            @click="showModal = false"
+            @click="closeModal"
           >
             取消
           </Button>
           <Button @click="handleCreate">
-            添加
+            {{ isEditing ? '保存' : '添加' }}
           </Button>
         </DialogFooter>
       </DialogContent>

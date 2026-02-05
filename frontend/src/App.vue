@@ -8,5 +8,6 @@ import { Toaster } from '@/components/ui/sonner'
   <Toaster
     position="top-right"
     :duration="3000"
+    :offset="{ top: 72, right: 24 }"
   />
 </template>

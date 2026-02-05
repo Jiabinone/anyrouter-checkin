@@ -14,8 +14,8 @@ import (
 )
 
 func Login(username, password string) (string, error) {
-	var user model.User
-	if err := repository.DB.Where("username = ?", username).First(&user).Error; err != nil {
+	user, err := repository.GetUserByUsername(username)
+	if err != nil {
 		return "", errors.New("用户不存在")
 	}
 
@@ -41,8 +41,10 @@ func generateToken(userID uint, username string) (string, error) {
 }
 
 func InitAdminUser() error {
-	var count int64
-	repository.DB.Model(&model.User{}).Count(&count)
+	count, err := repository.CountUsers()
+	if err != nil {
+		return err
+	}
 	if count > 0 {
 		return nil
 	}
@@ -52,15 +54,15 @@ func InitAdminUser() error {
 		return err
 	}
 
-	return repository.DB.Create(&model.User{
+	return repository.CreateUser(&model.User{
 		Username: config.C.Admin.Username,
 		Password: string(hashed),
-	}).Error
+	})
 }
 
 func ChangePassword(userID uint, oldPassword, newPassword string) error {
-	var user model.User
-	if err := repository.DB.First(&user, userID).Error; err != nil {
+	user, err := repository.GetUserByID(userID)
+	if err != nil {
 		return errors.New("用户不存在")
 	}
 
@@ -74,5 +76,5 @@ func ChangePassword(userID uint, oldPassword, newPassword string) error {
 	}
 
 	user.Password = string(hashed)
-	return repository.DB.Save(&user).Error
+	return repository.SaveUser(user)
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { LayoutDashboard, Users, Clock, Bell, Settings, LogOut, KeyRound } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
 import { changePassword, getProfile } from '@/api/auth'
-import { LayoutDashboard, Users, Clock, Bell, Settings, LogOut, KeyRound } from 'lucide-vue-next'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +25,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import ModeToggle from '@/components/common/ModeToggle.vue'
-import { toast } from 'vue-sonner'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -61,6 +61,10 @@ const menuItems = [
   { path: '/system/push', name: '推送配置', icon: Bell },
   { path: '/system/config', name: '更多设置', icon: Settings },
 ]
+
+function isActiveRoute(path: string) {
+  return route.path === path || route.path.startsWith(path + '/')
+}
 
 const showPasswordDialog = ref(false)
 const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
@@ -118,7 +122,7 @@ function handleLogout() {
           :key="item.path"
           :to="item.path"
           class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors"
-          :class="route.path === item.path || route.path.startsWith(item.path + '/')
+          :class="isActiveRoute(item.path)
             ? 'bg-primary text-primary-foreground'
             : 'hover:bg-muted'"
         >

@@ -41,3 +41,6 @@ pnpm-debug.log*
 # Local-only scripts
 /scripts/docker_publish.sh
 /scripts/cleanup_actions_runs.sh
+
+
+AnyRouter-session.md

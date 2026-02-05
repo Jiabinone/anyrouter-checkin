@@ -14,7 +14,7 @@ lint:
 	@golangci-lint run ./... 2>/dev/null || go vet ./...
 
 gen-docs:
-	@swag init -g cmd/server/main.go -o docs
+	@swag init -g main.go -o docs --parseInternal --dir ./cmd/server,./internal/handler,./internal/service,./internal/model,./pkg/response
 
 clean:
 	@rm -rf bin/ tmp/ data/

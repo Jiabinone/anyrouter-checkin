@@ -13,12 +13,8 @@ type CheckinLogSummary struct {
 }
 
 func GetCheckinLogSummary(limit int) (CheckinLogSummary, error) {
-	var logs []model.CheckinLog
-	query := repository.DB.Order("id desc")
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-	if err := query.Find(&logs).Error; err != nil {
+	logs, err := repository.ListCheckinLogs(limit)
+	if err != nil {
 		return CheckinLogSummary{}, err
 	}
 
@@ -26,12 +22,8 @@ func GetCheckinLogSummary(limit int) (CheckinLogSummary, error) {
 	start := now.StartOfDay().StdTime()
 	end := now.EndOfDay().StdTime()
 
-	var count int64
-	if err := repository.DB.Model(&model.CheckinLog{}).
-		Distinct("account_id").
-		Where("success = ?", true).
-		Where("created_at >= ? AND created_at <= ?", start, end).
-		Count(&count).Error; err != nil {
+	count, err := repository.CountSuccessfulAccounts(start, end)
+	if err != nil {
 		return CheckinLogSummary{}, err
 	}
 

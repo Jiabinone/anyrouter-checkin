@@ -3,8 +3,6 @@ package handler
 import (
 	"errors"
 
-	"anyrouter-checkin/internal/model"
-	"anyrouter-checkin/internal/repository"
 	"anyrouter-checkin/internal/service"
 	"anyrouter-checkin/pkg/response"
 
@@ -21,12 +19,10 @@ import (
 // @Router /config/{category} [get]
 func GetConfigs(c *gin.Context) {
 	category := c.Param("category")
-	var configs []model.Config
-	repository.DB.Where("category = ?", category).Find(&configs)
-
-	result := make(map[string]string)
-	for _, cfg := range configs {
-		result[cfg.Key] = cfg.Value
+	result, err := service.GetConfigs(category)
+	if err != nil {
+		response.Error(c, 500, "获取配置失败")
+		return
 	}
 	response.Success(c, result)
 }
@@ -50,7 +46,10 @@ func UpdateConfigs(c *gin.Context) {
 	}
 
 	for key, value := range req {
-		service.SetConfig(key, value, category)
+		if err := service.SetConfig(key, value, category); err != nil {
+			response.Error(c, 500, "保存配置失败")
+			return
+		}
 	}
 
 	response.Success(c, nil)

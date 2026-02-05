@@ -1,17 +1,18 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
-	"anyrouter-checkin/internal/config"
 	"anyrouter-checkin/internal/model"
-	"anyrouter-checkin/internal/repository"
 	"anyrouter-checkin/internal/service"
 	"anyrouter-checkin/pkg/response"
-	"anyrouter-checkin/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
+
+var _ = model.Account{}
 
 type AccountRequest struct {
 	Name    string `json:"name" binding:"required" example:"我的账号"`
@@ -30,8 +31,11 @@ type VerifyRequest struct {
 // @Success 200 {object} response.Response{data=[]model.Account}
 // @Router /accounts [get]
 func ListAccounts(c *gin.Context) {
-	var accounts []model.Account
-	repository.DB.Order("id desc").Find(&accounts)
+	accounts, err := service.ListAccounts()
+	if err != nil {
+		response.Error(c, 500, "获取账号失败")
+		return
+	}
 	response.Success(c, accounts)
 }
 
@@ -51,28 +55,12 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 
-	info, err := service.ParseSession(req.Session)
+	account, err := service.CreateAccount(req.Name, req.Session)
 	if err != nil {
-		response.Error(c, 400, "Session 无效: "+err.Error())
-		return
-	}
-
-	encrypted, err := utils.AESEncrypt(req.Session, config.C.AES.Key)
-	if err != nil {
-		response.Error(c, 500, "加密失败")
-		return
-	}
-
-	account := model.Account{
-		Name:     req.Name,
-		Session:  encrypted,
-		UserID:   info.UserID,
-		Username: info.Username,
-		Role:     info.Role,
-		Status:   1,
-	}
-
-	if err := repository.DB.Create(&account).Error; err != nil {
+		if errors.Is(err, service.ErrInvalidSession) {
+			response.Error(c, 400, err.Error())
+			return
+		}
 		response.Error(c, 500, "创建失败")
 		return
 	}
@@ -91,10 +79,9 @@ func CreateAccount(c *gin.Context) {
 // @Success 200 {object} response.Response{data=model.Account}
 // @Router /accounts/{id} [put]
 func UpdateAccount(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	var account model.Account
-	if repository.DB.First(&account, id).Error != nil {
-		response.Error(c, 404, "账号不存在")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, 400, "账号ID无效")
 		return
 	}
 
@@ -104,21 +91,19 @@ func UpdateAccount(c *gin.Context) {
 		return
 	}
 
-	if req.Session != "" && req.Session != "unchanged" {
-		info, err := service.ParseSession(req.Session)
-		if err != nil {
-			response.Error(c, 400, "Session 无效")
+	account, err := service.UpdateAccount(uint(id), req.Name, req.Session)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Error(c, 404, "账号不存在")
 			return
 		}
-		encrypted, _ := utils.AESEncrypt(req.Session, config.C.AES.Key)
-		account.Session = encrypted
-		account.UserID = info.UserID
-		account.Username = info.Username
-		account.Role = info.Role
+		if errors.Is(err, service.ErrInvalidSession) {
+			response.Error(c, 400, err.Error())
+			return
+		}
+		response.Error(c, 500, "更新失败")
+		return
 	}
-	account.Name = req.Name
-
-	repository.DB.Save(&account)
 	response.Success(c, account)
 }
 
@@ -131,8 +116,15 @@ func UpdateAccount(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /accounts/{id} [delete]
 func DeleteAccount(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	repository.DB.Delete(&model.Account{}, id)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, 400, "账号ID无效")
+		return
+	}
+	if err := service.DeleteAccount(uint(id)); err != nil {
+		response.Error(c, 500, "删除失败")
+		return
+	}
 	response.Success(c, nil)
 }
 
@@ -145,7 +137,11 @@ func DeleteAccount(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /accounts/{id}/checkin [post]
 func CheckinAccount(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, 400, "账号ID无效")
+		return
+	}
 	success, result := service.CheckinAccount(uint(id))
 	response.Success(c, gin.H{
 		"success": success,
