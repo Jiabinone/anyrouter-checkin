@@ -21,29 +21,24 @@ func Init(dbPath string) error {
 		return err
 	}
 
-	return DB.AutoMigrate(
+	if err := DB.AutoMigrate(
 		&model.User{},
 		&model.Account{},
 		&model.CronTask{},
 		&model.Config{},
 		&model.CheckinLog{},
-	)
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 func InitDefaultConfigs() {
 	defaultTelegramTemplate := `<b>AnyRouter 签到系统</b>
-你好，<code>{{.Name}}</code>
+用户名：<code>{{.Username}}</code>
 状态：{{if .Success}}<b>成功 ✅</b>{{else}}<b>失败 ❌</b>{{end}}
 结果：
 <pre>{{.Result}}</pre>`
-	legacyTelegramTemplates := map[string]struct{}{
-		"签到结果: {{.Result}}": {},
-		"【{{.Name}}】签到{{if .Success}}成功{{else}}失败{{end}}: {{.Result}}":                                                                 {},
-		"签到通知\n账号：{{.Name}}\n状态：{{if .Success}}成功{{else}}失败{{end}}\n结果：{{.Result}}":                                                    {},
-		"<b>签到通知</b>\n账号：<code>{{.Name}}</code>\n状态：{{if .Success}}<b>成功</b>{{else}}<b>失败</b>{{end}}\n结果：\n<pre>{{.Result}}</pre>":     {},
-		"<b>签到提醒</b>\n你好，<code>{{.Name}}</code>\n状态：{{if .Success}}<b>成功 ✅</b>{{else}}<b>失败 ❌</b>{{end}}\n结果：\n<pre>{{.Result}}</pre>": {},
-	}
-
 	defaults := []model.Config{
 		{Key: "telegram.api_base", Value: "https://api.telegram.org", Category: "telegram"},
 		{Key: "telegram.bot_token", Value: "", Category: "telegram"},
@@ -64,12 +59,7 @@ func InitDefaultConfigs() {
 		}
 
 		if c.Key == "telegram.template" {
-			if _, ok := legacyTelegramTemplates[cfg.Value]; ok {
-				cfg.Value = c.Value
-				if err := DB.Save(&cfg).Error; err != nil {
-					continue
-				}
-			}
+			continue
 		}
 	}
 }

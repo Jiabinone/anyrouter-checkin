@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { Save, Send } from 'lucide-vue-next'
+import { Save, Send, FileText } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { getConfigs, updateConfigs, testTelegram } from '@/api/system'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -12,19 +12,11 @@ import { Switch } from '@/components/ui/switch'
 
 const recommendedTemplate = [
   '<b>AnyRouter 签到系统</b>',
-  '你好，<code>{{.Name}}</code>',
+  '用户名：<code>{{.Username}}</code>',
   '状态：{{if .Success}}<b>成功 ✅</b>{{else}}<b>失败 ❌</b>{{end}}',
   '结果：',
   '<pre>{{.Result}}</pre>',
 ].join('\n')
-
-const legacyTemplates = new Set([
-  '签到结果: {{.Result}}',
-  '【{{.Name}}】签到{{if .Success}}成功{{else}}失败{{end}}: {{.Result}}',
-  '签到通知\n账号：{{.Name}}\n状态：{{if .Success}}成功{{else}}失败{{end}}\n结果：{{.Result}}',
-  '<b>签到通知</b>\n账号：<code>{{.Name}}</code>\n状态：{{if .Success}}<b>成功</b>{{else}}<b>失败</b>{{end}}\n结果：\n<pre>{{.Result}}</pre>',
-  '<b>签到提醒</b>\n你好，<code>{{.Name}}</code>\n状态：{{if .Success}}<b>成功 ✅</b>{{else}}<b>失败 ❌</b>{{end}}\n结果：\n<pre>{{.Result}}</pre>',
-])
 
 const form = ref({
   'telegram.enabled': 'false',
@@ -48,11 +40,6 @@ const testing = ref(false)
 async function loadConfigs() {
   const data = await getConfigs('telegram')
   Object.assign(form.value, data)
-
-  const currentTemplate = form.value['telegram.template']
-  if (!currentTemplate || legacyTemplates.has(currentTemplate)) {
-    form.value['telegram.template'] = recommendedTemplate
-  }
 }
 
 async function handleSave() {
@@ -78,6 +65,10 @@ async function handleTest() {
   } finally {
     testing.value = false
   }
+}
+
+function applyTemplate() {
+  form.value['telegram.template'] = recommendedTemplate
 }
 
 onMounted(loadConfigs)
@@ -165,7 +156,7 @@ onMounted(loadConfigs)
               v-pre
               class="text-xs text-muted-foreground"
             >
-              可用变量: {{.Name}} 账号名, {{.Success}} 是否成功, {{.Result}} 结果（支持 Telegram HTML）
+              可用变量: {{.Username}} (用户名), {{.Success}} 是否成功, {{.Result}} 结果（支持 Telegram HTML）
             </p>
           </div>
 
@@ -184,6 +175,13 @@ onMounted(loadConfigs)
             >
               <Send class="w-4 h-4" />
               {{ testing ? '发送中...' : '测试推送' }}
+            </Button>
+            <Button
+              variant="outline"
+              @click="applyTemplate"
+            >
+              <FileText class="w-4 h-4" />
+              预设模板
             </Button>
           </div>
         </div>

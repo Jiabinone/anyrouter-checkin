@@ -1,17 +1,5 @@
 basePath: /api
 definitions:
-  handler.AccountRequest:
-    properties:
-      name:
-        example: 我的账号
-        type: string
-      session:
-        example: base64-session-cookie
-        type: string
-    required:
-    - name
-    - session
-    type: object
   handler.ChangePasswordRequest:
     properties:
       new_password:
@@ -24,6 +12,14 @@ definitions:
     required:
     - new_password
     - old_password
+    type: object
+  handler.CreateAccountRequest:
+    properties:
+      session:
+        example: base64-session-cookie
+        type: string
+    required:
+    - session
     type: object
   handler.CronRequest:
     properties:
@@ -58,6 +54,20 @@ definitions:
     - password
     - username
     type: object
+  handler.UpdateAccountRequest:
+    properties:
+      session:
+        example: base64-session-cookie
+        type: string
+    type: object
+  handler.UpdateAccountStatusRequest:
+    properties:
+      status:
+        example: 1
+        type: integer
+    required:
+    - status
+    type: object
   handler.VerifyRequest:
     properties:
       session:
@@ -68,6 +78,8 @@ definitions:
     type: object
   model.Account:
     properties:
+      balance:
+        type: number
       created_at:
         format: date-time
         type: string
@@ -77,8 +89,6 @@ definitions:
         format: date-time
         type: string
       last_result:
-        type: string
-      name:
         type: string
       role:
         type: integer
@@ -197,7 +207,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.AccountRequest'
+          $ref: '#/definitions/handler.CreateAccountRequest'
       produces:
       - application/json
       responses:
@@ -249,7 +259,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.AccountRequest'
+          $ref: '#/definitions/handler.UpdateAccountRequest'
       produces:
       - application/json
       responses:
@@ -285,6 +295,64 @@ paths:
       security:
       - BearerAuth: []
       summary: 手动执行签到
+      tags:
+      - 账号管理
+  /accounts/{id}/refresh:
+    post:
+      parameters:
+      - description: 账号ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Account'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 刷新账号信息
+      tags:
+      - 账号管理
+  /accounts/{id}/status:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 账号ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 账号状态
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateAccountStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Account'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新账号状态
       tags:
       - 账号管理
   /accounts/verify:

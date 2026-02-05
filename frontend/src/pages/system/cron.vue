@@ -277,7 +277,7 @@ onMounted(loadData)
                   :for="`acc-${acc.id}`"
                   class="cursor-pointer font-normal"
                 >
-                  {{ acc.name }} ({{ acc.username }})
+                  {{ acc.username }} ({{ acc.user_id }})
                 </Label>
               </div>
             </div>

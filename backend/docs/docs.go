@@ -76,7 +76,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.AccountRequest"
+                            "$ref": "#/definitions/handler.CreateAccountRequest"
                         }
                     }
                 ],
@@ -178,7 +178,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.AccountRequest"
+                            "$ref": "#/definitions/handler.UpdateAccountRequest"
                         }
                     }
                 ],
@@ -263,6 +263,108 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/accounts/{id}/refresh": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账号管理"
+                ],
+                "summary": "刷新账号信息",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "账号ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Account"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/accounts/{id}/status": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "账号管理"
+                ],
+                "summary": "更新账号状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "账号ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "账号状态",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateAccountStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Account"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -750,23 +852,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.AccountRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "session"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "我的账号"
-                },
-                "session": {
-                    "type": "string",
-                    "example": "base64-session-cookie"
-                }
-            }
-        },
         "handler.ChangePasswordRequest": {
             "type": "object",
             "required": [
@@ -782,6 +867,18 @@ const docTemplate = `{
                 "old_password": {
                     "type": "string",
                     "example": "oldpass"
+                }
+            }
+        },
+        "handler.CreateAccountRequest": {
+            "type": "object",
+            "required": [
+                "session"
+            ],
+            "properties": {
+                "session": {
+                    "type": "string",
+                    "example": "base64-session-cookie"
                 }
             }
         },
@@ -831,6 +928,27 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.UpdateAccountRequest": {
+            "type": "object",
+            "properties": {
+                "session": {
+                    "type": "string",
+                    "example": "base64-session-cookie"
+                }
+            }
+        },
+        "handler.UpdateAccountStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "handler.VerifyRequest": {
             "type": "object",
             "required": [
@@ -846,6 +964,9 @@ const docTemplate = `{
         "model.Account": {
             "type": "object",
             "properties": {
+                "balance": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string",
                     "format": "date-time"
@@ -858,9 +979,6 @@ const docTemplate = `{
                     "format": "date-time"
                 },
                 "last_result": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 },
                 "role": {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"strings"
 	"sync"
 
 	"anyrouter-checkin/internal/model"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/dromara/carbon/v2"
 	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
 )
 
 var (
@@ -73,14 +75,17 @@ func ExecuteTask(taskID uint) {
 		return
 	}
 
-	for _, accID := range accountIDs {
-		account, err := repository.GetAccountByID(accID)
-		if err != nil {
-			continue
+		for _, accID := range accountIDs {
+			account, err := repository.GetAccountByID(accID)
+			if err != nil {
+				continue
+			}
+			if account.Status != 1 {
+				continue
+			}
+			success, result := CheckinAccount(accID)
+			SendCheckinNotification(strings.TrimSpace(account.Username), success, result)
 		}
-		success, result := CheckinAccount(accID)
-		SendCheckinNotification(account.Name, success, result)
-	}
 
 	now := carbon.DateTime{Carbon: carbon.Now()}
 	task.LastRun = &now
@@ -112,6 +117,53 @@ func updateNextRun(taskID uint) {
 
 func listCronTasks() ([]model.CronTask, error) {
 	return repository.ListCronTasks()
+}
+
+func removeAccountFromCronTasks(accountID uint) error {
+	tasks, err := repository.ListCronTasks()
+	if err != nil {
+		return err
+	}
+
+	for i := range tasks {
+		task := tasks[i]
+		ids, err := parseAccountIDs(task.AccountIDs)
+		if err != nil {
+			zap.L().Warn("解析定时任务账号失败", zap.Uint("task_id", task.ID), zap.Error(err))
+			continue
+		}
+		next := make([]uint, 0, len(ids))
+		for _, id := range ids {
+			if id != accountID {
+				next = append(next, id)
+			}
+		}
+		if len(next) == len(ids) {
+			continue
+		}
+		payload, err := json.Marshal(next)
+		if err != nil {
+			return err
+		}
+		task.AccountIDs = string(payload)
+		if err := repository.SaveCronTask(&task); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func parseAccountIDs(raw string) ([]uint, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || trimmed == "null" {
+		return []uint{}, nil
+	}
+	var ids []uint
+	if err := json.Unmarshal([]byte(trimmed), &ids); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 func createCronTask(task *model.CronTask) (model.CronTask, error) {

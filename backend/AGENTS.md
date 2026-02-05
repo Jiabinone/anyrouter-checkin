@@ -62,7 +62,7 @@ response.Unauthorized(c)           // 未授权
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body AccountRequest true "参数"
+// @Param request body CreateAccountRequest true "参数"
 // @Success 200 {object} response.Response{data=model.Account}
 // @Router /accounts [post]
 func CreateAccount(c *gin.Context) {}

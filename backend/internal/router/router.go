@@ -14,6 +14,8 @@ func Setup(r *gin.Engine) {
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	r.Any("/anyrouter/*path", handler.AnyRouterProxy)
+
 	api := r.Group("/api")
 	{
 		api.POST("/auth/login", handler.Login)
@@ -28,8 +30,10 @@ func Setup(r *gin.Engine) {
 			auth.GET("/accounts", handler.ListAccounts)
 			auth.POST("/accounts", handler.CreateAccount)
 			auth.PUT("/accounts/:id", handler.UpdateAccount)
+			auth.PUT("/accounts/:id/status", handler.UpdateAccountStatus)
 			auth.DELETE("/accounts/:id", handler.DeleteAccount)
 			auth.POST("/accounts/:id/checkin", handler.CheckinAccount)
+			auth.POST("/accounts/:id/refresh", handler.RefreshAccount)
 
 			auth.GET("/cron", handler.ListCronTasks)
 			auth.POST("/cron", handler.CreateCronTask)

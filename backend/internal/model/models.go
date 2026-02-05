@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/dromara/carbon/v2"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -16,12 +17,12 @@ type User struct {
 
 type Account struct {
 	ID          uint             `gorm:"primarykey" json:"id"`
-	Name        string           `gorm:"size:100" json:"name"`
 	Session     string           `gorm:"type:text" json:"-"`
 	UserID      int              `json:"user_id"`
 	Username    string           `gorm:"size:100" json:"username"`
 	Role        int              `json:"role"`
 	Status      int              `gorm:"default:1" json:"status"`
+	Balance     decimal.Decimal  `gorm:"type:decimal(20,2);default:0" json:"balance"`
 	LastCheckin *carbon.DateTime `json:"last_checkin" swaggertype:"string" format:"date-time"`
 	LastResult  string           `gorm:"size:255" json:"last_result"`
 	CreatedAt   carbon.DateTime  `json:"created_at" swaggertype:"string" format:"date-time"`

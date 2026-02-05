@@ -26,7 +26,7 @@ func SendTelegramMessage(message string) error {
 	botToken := GetConfig("telegram.bot_token")
 	chatID := GetConfig("telegram.chat_id")
 	if botToken == "" || chatID == "" {
-		return fmt.Errorf("Telegram 配置不完整")
+		return fmt.Errorf("telegram 配置不完整")
 	}
 
 	apiBase := strings.TrimSpace(GetConfig("telegram.api_base"))
@@ -64,7 +64,7 @@ func SendTelegramMessage(message string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Telegram API 返回 %d", resp.StatusCode)
+		return fmt.Errorf("telegram API 返回 %d", resp.StatusCode)
 	}
 	return nil
 }
@@ -73,7 +73,7 @@ func renderCheckinTemplate(accountName string, success bool, result string) (str
 	tplStr := GetConfig("telegram.template")
 	if tplStr == "" {
 		tplStr = `<b>AnyRouter 签到系统</b>
-你好，<code>{{.Name}}</code>
+用户名：<code>{{.Username}}</code>
 状态：{{if .Success}}<b>成功 ✅</b>{{else}}<b>失败 ❌</b>{{end}}
 结果：
 <pre>{{.Result}}</pre>`
@@ -86,9 +86,9 @@ func renderCheckinTemplate(accountName string, success bool, result string) (str
 
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, map[string]interface{}{
-		"Name":    html.EscapeString(accountName),
-		"Success": success,
-		"Result":  html.EscapeString(result),
+		"Username": html.EscapeString(accountName),
+		"Success":  success,
+		"Result":   html.EscapeString(result),
 	}); err != nil {
 		return "", err
 	}
@@ -115,8 +115,10 @@ func SendTestCheckinNotification() error {
 
 	accountName := fmt.Sprintf("账号ID:%d", log.AccountID)
 	account, err := repository.GetAccountByID(log.AccountID)
-	if err == nil && account.Name != "" {
-		accountName = account.Name
+	if err == nil {
+		if displayName := strings.TrimSpace(account.Username); displayName != "" {
+			accountName = displayName
+		}
 	}
 
 	message, err := renderCheckinTemplate(accountName, log.Success, log.Message)

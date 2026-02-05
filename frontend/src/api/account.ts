@@ -2,11 +2,11 @@ import request from '@/utils/request'
 
 export interface Account {
   id: number
-  name: string
   user_id: number
   username: string
   role: number
   status: number
+  balance: string | number
   last_checkin: string | null
   last_result: string | null
 }
@@ -28,12 +28,20 @@ export function getAccounts(): Promise<Account[]> {
   return request.get<Account[], Account[]>('/accounts')
 }
 
-export function createAccount(data: { name: string; session: string }): Promise<Account> {
-  return request.post<Account, Account>('/accounts', data)
+export function createAccount(data: { session: string }): Promise<Account> {
+	return request.post<Account, Account>('/accounts', data)
 }
 
-export function updateAccount(id: number, data: { name: string; session: string }): Promise<Account> {
-  return request.put<Account, Account>(`/accounts/${id}`, data)
+export function refreshAccount(id: number): Promise<Account> {
+  return request.post<Account, Account>(`/accounts/${id}/refresh`)
+}
+
+export function updateAccount(id: number, data: { session?: string }): Promise<Account> {
+	return request.put<Account, Account>(`/accounts/${id}`, data)
+}
+
+export function updateAccountStatus(id: number, status: number): Promise<Account> {
+	return request.put<Account, Account>(`/accounts/${id}/status`, { status })
 }
 
 export function deleteAccount(id: number): Promise<null> {
