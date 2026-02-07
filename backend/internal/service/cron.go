@@ -75,17 +75,16 @@ func ExecuteTask(taskID uint) {
 		return
 	}
 
-		for _, accID := range accountIDs {
-			account, err := repository.GetAccountByID(accID)
-			if err != nil {
-				continue
-			}
-			if account.Status != 1 {
-				continue
-			}
-			success, result := CheckinAccount(accID)
-			SendCheckinNotification(strings.TrimSpace(account.Username), success, result)
+	for _, accID := range accountIDs {
+		account, err := repository.GetAccountByID(accID)
+		if err != nil {
+			continue
 		}
+		if account.Status != 1 {
+			continue
+		}
+		CheckinAccount(accID)
+	}
 
 	now := carbon.DateTime{Carbon: carbon.Now()}
 	task.LastRun = &now
